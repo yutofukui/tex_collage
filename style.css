@@ -11,9 +11,6 @@ html, body {
 }
 
 .container {
-  /* padding: 30px; */
-  /* width: calc(100% - 100px); */
-  /* height: calc(100% - 100px); */
   display: flex;
   justify-content: center;
 }
@@ -44,9 +41,6 @@ canvas {
   }
 
   .container {
-    padding: 15px;
-    width: calc(100% - 30px);
-    height: calc(100% - 550px);
     margin: auto 0;
   }
 
@@ -57,7 +51,7 @@ canvas {
   }
 
   .title-top {
-    top: calc(275px / 2 - 60px);
+    top: calc(50%);
     transform: translateX(-50%) translateY(-50%);
   }
 
@@ -69,16 +63,14 @@ canvas {
 
 @media screen and (max-width: 480px) {
   .container {
-    padding: 10px;
     width: calc(100%);
-    height: calc(100% - 570px);
   }
 
   .title-top {
-    top: calc(275px / 2 + 2.8em);
+    top: calc(50%);
   }
 
   .title-bottom {
-    bottom: calc(275px / 2 + 0.7em);
+    bottom: calc(25%);
   }
 }

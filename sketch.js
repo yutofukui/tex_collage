@@ -5,7 +5,7 @@ let numImgs = 63;
 let minSize = 20;
 let maxSize = 300;
 let totalFragments = 30;
-let maxTotalFragments = 900;
+let maxTotalFragments = 300;
 let rotatingText = "Re:Flyers ";
 let angle = 0;
 let isMobile = false;
@@ -40,8 +40,8 @@ function setup() {
     let sx = floor(random(img.width - w));
     let sy = floor(random(img.height - h));
     let piece = img.get(sx, sy, w, h);
-    let x = random(-width * 0.05, width * mainCanvasScale);
-    let y = random(-height * 0.15, height * mainCanvasScale);
+    let x = random(-width * 0.1, width * mainCanvasScale);
+    let y = random(-height * 0.0015, height * mainCanvasScale);
     fragments.push(new Fragment(x, y, w, h, piece));
   }
 
@@ -54,7 +54,7 @@ function draw() {
   background(255);
 
   if (fragments.length < maxTotalFragments) {
-    if (frameCount % 10 === 0) {
+    if (frameCount % 50 === 0) {
       let img = random(imgs);
       let w = random(minSize, maxSize) * mainCanvasScale;
       let h = random(minSize, maxSize) * mainCanvasScale;
@@ -62,7 +62,7 @@ function draw() {
       let sy = floor(random(img.height - h));
       let piece = img.get(sx, sy, w, h);
       let x = random(-width * 0.1, width * mainCanvasScale);
-      let y = random(-height * 0.15, height * mainCanvasScale);
+      let y = random(-height * 0.0015, height * mainCanvasScale);
       let newFrag = new Fragment(x, y, w, h, piece);
 
       newFrag.fadeProgress = 0;
@@ -215,7 +215,7 @@ class Fragment {
       this.targetX = this.x - random(100, 300); 
     }
     
-    this.targetY = random(-height * 1.2, height * 1.2); // 👈 ここ変更！
+    this.targetY = random(-height * 1.2, height * 1.2);
     
     let baseSize = random(minSize, maxSize);
     let ratio = random(0.3, 2.5);
