@@ -11,6 +11,7 @@ let angle = 0;
 let isMobile = false;
 let mainCanvasScale = 0.5;
 let textPadding = 40;
+let pendingFragments = [];
 
 let lastActivation = 0;
 let activationInterval = 300;
@@ -53,22 +54,50 @@ function setup() {
 function draw() {
   background(255);
 
-  if (fragments.length < maxTotalFragments) {
-    if (frameCount % 50 === 0) {
-      let img = random(imgs);
-      let w = random(minSize, maxSize) * mainCanvasScale;
-      let h = random(minSize, maxSize) * mainCanvasScale;
-      let sx = floor(random(img.width - w));
-      let sy = floor(random(img.height - h));
-      let piece = img.get(sx, sy, w, h);
-      let x = random(-width * 0.1, width * mainCanvasScale);
-      let y = random(-height * 0.0015, height * mainCanvasScale);
-      let newFrag = new Fragment(x, y, w, h, piece);
+  if (frameCount % 603 === 0) {
+    shuffleFragments();
+  }
 
+  if (frameCount % 50 === 0 && fragments.length < maxTotalFragments) {
+    let img = random(imgs);
+    let w = random(minSize, maxSize) * mainCanvasScale;
+    let h = random(minSize, maxSize) * mainCanvasScale;
+    let sx = floor(random(img.width - w));
+    let sy = floor(random(img.height - h));
+    let piece = img.get(sx, sy, w, h);
+    let x = random(-width * 0.1, width * mainCanvasScale);
+    let y = random(-height * 0.0015, height * mainCanvasScale);
+    
+    pendingFragments.push({
+      img: piece,
+      x: x,
+      y: y,
+      w: w,
+      h: h,
+      fadeInProgress: 0,
+      isMoving: false
+    });
+  }
+
+  for (let i = pendingFragments.length - 1; i >= 0; i--) {
+    let pending = pendingFragments[i];
+    pending.fadeInProgress += 0.01;
+    
+    if (pending.fadeInProgress >= 1) {
+      let newFrag = new Fragment(pending.x, pending.y, pending.w, pending.h, pending.img);
       newFrag.fadeProgress = 0;
       newFrag.nextImg = newFrag.currentImg;
       fragments.push(newFrag);
+      pendingFragments.splice(i, 1);
     }
+  }
+
+  for (let pending of pendingFragments) {
+    push();
+    translate(pending.x + pending.w/2, pending.y + pending.h/2);
+    tint(255, 255 * pending.fadeInProgress);
+    image(pending.img, -pending.w/2, -pending.h/2, pending.w, pending.h);
+    pop();
   }
 
   if (millis() - lastActivation > activationInterval && activeFragments.length < maxActive) {
@@ -96,7 +125,6 @@ function draw() {
 
   activeFragments = activeFragments.filter(f => f.nextImg !== null || f.fadeProgress > 0);
 }
-
 
 function drawRotatingText() {
   push();
@@ -146,6 +174,41 @@ function windowResized() {
   }
 }
 
+function shuffleFragments() {
+  let fragmentsToShuffle = [];
+  let availableFragments = fragments.filter(f => !f.isFadingIn && !f.nextImg);
+  
+  for (let i = 0; i < min(60, availableFragments.length); i++) {
+    let randomIndex = floor(random(availableFragments.length));
+    fragmentsToShuffle.push(availableFragments[randomIndex]);
+    availableFragments.splice(randomIndex, 1);
+  }
+
+  let positions = [];
+  for (let frag of fragmentsToShuffle) {
+    let maxDistance = min(width * 0.4, height * 0.4);
+    let angle = random(TWO_PI);
+    let distance = random(maxDistance * 0.4, maxDistance);
+    
+    positions.push({
+      x: constrain(frag.x + cos(angle) * distance, -width * 0.1, width * mainCanvasScale),
+      y: constrain(frag.y + sin(angle) * distance, -height * 0.0015, height * mainCanvasScale)
+    });
+  }
+
+  for (let i = positions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [positions[i], positions[j]] = [positions[j], positions[i]];
+  }
+
+  for (let i = 0; i < fragmentsToShuffle.length; i++) {
+    fragmentsToShuffle[i].targetX = positions[i].x;
+    fragmentsToShuffle[i].targetY = positions[i].y;
+    fragmentsToShuffle[i].moveDelay = random(0, 100);
+    fragmentsToShuffle[i].isMoving = true;
+  }
+}
+
 class Fragment {
   constructor(x, y, w, h, img) {
     this.x = x;
@@ -163,26 +226,88 @@ class Fragment {
     this.fadeProgress = 0;
     this.fadeDuration = 2000;
     this.layerFade = 0.3;
-  }
-
-  display() {
-    if (this.nextImg && this.fadeProgress < 1) {
-      image(this.currentImg, this.x, this.y, this.w, this.h);
-      push();
-      tint(255, 255 * this.fadeProgress);
-      image(this.nextImg, this.x, this.y, this.w, this.h);
-      pop();
-    } else {
-      image(this.currentImg, this.x, this.y, this.w, this.h);
-    }
+    this.moveDelay = 0;
+    this.isMoving = false;
+    this.moveStartTime = 0;
+    this.rotation = 0;
+    this.moveProgress = 0;
+    this.arcCenter = { x: 0, y: 0 };
+    this.startAngle = 0;
+    this.arcAngle = 0;
+    this.radius = 0;
+    this.initialRotation = this.rotation;
+    this.initialX = x;
+    this.initialY = y;
+    this.isFadingIn = true;
+    this.fadeInDuration = 1000;
   }
 
   update() {
     this.timer += deltaTime;
 
+    if (this.isFadingIn) {
+      this.fadeProgress += deltaTime / this.fadeInDuration;
+      if (this.fadeProgress >= 1) {
+        this.isFadingIn = false;
+        this.fadeProgress = 0;
+      }
+      return;
+    }
+
+    if (this.isMoving) {
+      if (this.moveStartTime === 0) {
+        this.moveStartTime = millis();
+        this.initialX = this.x;
+        this.initialY = this.y;
+        
+        let dx = this.targetX - this.x;
+        let dy = this.targetY - this.y;
+        let distance = dist(this.x, this.y, this.targetX, this.targetY);
+        
+        let arcDirection = random() < 0.5 ? 1 : -1;
+        this.arcAngle = random(PI/3, PI) * arcDirection;
+        
+        let midX = (this.x + this.targetX) / 2;
+        let midY = (this.y + this.targetY) / 2;
+        let angle = atan2(dy, dx);
+        let perpendicularAngle = angle + PI/2;
+        
+        this.radius = distance / (2 * sin(this.arcAngle/2));
+        let centerDistance = this.radius * cos(this.arcAngle/2);
+        
+        this.arcCenter = {
+          x: midX + cos(perpendicularAngle) * centerDistance * arcDirection,
+          y: midY + sin(perpendicularAngle) * centerDistance * arcDirection
+        };
+        
+        this.startAngle = atan2(this.y - this.arcCenter.y, this.x - this.arcCenter.x);
+        this.moveProgress = 0;
+      }
+
+      if (millis() - this.moveStartTime > this.moveDelay) {
+        let moveSpeed = 0.06;
+        this.moveProgress = min(this.moveProgress + moveSpeed, 1);
+        
+        let t = this.moveProgress;
+        t = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        
+        let currentAngle = this.startAngle + this.arcAngle * t;
+        this.x = this.arcCenter.x + cos(currentAngle) * this.radius;
+        this.y = this.arcCenter.y + sin(currentAngle) * this.radius;
+        
+        let targetRotation = currentAngle + PI/2;
+        this.rotation = lerp(this.initialRotation, targetRotation, t);
+
+        if (this.moveProgress >= 1) {
+          this.isMoving = false;
+          this.moveStartTime = 0;
+          this.initialRotation = this.rotation;
+        }
+      }
+    }
+
     if (this.nextImg) {
       this.fadeProgress += deltaTime / this.fadeDuration;
-      // this.layerFade = min(this.layerFade + 0.01, 1);
       this.layerFade = min(this.layerFade + 0.01, 1);
 
       let moveSpeed = 0.00015;
@@ -199,14 +324,34 @@ class Fragment {
         this.fadeProgress = 0;
         this.timer = 0;
         this.nextChange = random(8000, 16000);
-        // this.nextChange = 80000;
       }
     } else {
       this.layerFade = max(this.layerFade - 0.01, 0.3);
     }
   }
 
+  display() {
+    push();
+    translate(this.x + this.w/2, this.y + this.h/2);
+    rotate(this.rotation);
+    if (this.isFadingIn) {
+      tint(255, 255 * this.fadeProgress);
+      image(this.currentImg, -this.w/2, -this.h/2, this.w, this.h);
+    } else if (this.nextImg && this.fadeProgress < 1) {
+      image(this.currentImg, -this.w/2, -this.h/2, this.w, this.h);
+      push();
+      tint(255, 255 * this.fadeProgress);
+      image(this.nextImg, -this.w/2, -this.h/2, this.w, this.h);
+      pop();
+    } else {
+      image(this.currentImg, -this.w/2, -this.h/2, this.w, this.h);
+    }
+    pop();
+  }
+
   startFadeToNewImage() {
+    if (this.isFadingIn) return;
+    
     let direction = random();
     
     if (direction < 0.5) {
@@ -240,7 +385,4 @@ class Fragment {
       fragments.push(this);
     }
   }
-  
-  
-  
 }

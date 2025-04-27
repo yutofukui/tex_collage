@@ -39,7 +39,7 @@ html, body {
   border-radius: 10px;
   max-width: 800px;
   margin: 2rem;
-  transform: translateY(55%);
+  transform: translateY(100%);
   transition: transform 0.5s ease-out;
 }
 
@@ -74,12 +74,68 @@ canvas {
   flex-wrap: wrap;
 }
 
+.image-scroll-container {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 2rem;
+  padding: 1rem 0;
+  position: relative;
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.image-scroll-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.image-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.image-scroll-container::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.image-scroll-container::before,
+.image-scroll-container::after {
+  content: "→";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 24px;
+  color: rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.image-scroll-container::before {
+  left: 0;
+}
+
+.image-scroll-container::after {
+  right: 0;
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.image-scroll-wrapper {
+  display: flex;
+  gap: 1rem;
+  padding: 0 2rem;
+  width: fit-content;
+}
+
 .content-image {
-  max-width: 300px;
-  height: auto;
+  width: 200px;
+  height: 350px;
+  object-fit: cover;
   border-radius: 5px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
+  flex-shrink: 0;
 }
 
 .content-image:hover {
@@ -110,6 +166,11 @@ canvas {
   .title-bottom {
     bottom: calc(275px / 2 - 60px);
     transform: translateX(-50%) translateY(50%);
+  }
+
+  .content-image {
+    width: 150px;
+    height: 262px;
   }
 }
 
