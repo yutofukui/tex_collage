@@ -104,7 +104,7 @@ canvas {
 
 .image-scroll-container::before,
 .image-scroll-container::after {
-  content: "→";
+  content: "";
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
