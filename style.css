@@ -2,17 +2,41 @@ html, body {
   margin: 0;
   padding: 0;
   background-color: #ffffff;
-  overflow: hidden;
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  height: 100%;
+  width: 100%;
 }
 
-.container {
+.canvas-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.content-container {
+  position: relative;
+  z-index: 2;
+  min-height: 100%;
   display: flex;
+  align-items: center;
   justify-content: center;
+  background: transparent;
+}
+
+.content {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 2rem;
+  border-radius: 10px;
+  max-width: 800px;
+  margin: 2rem;
+  transform: translateY(55%);
+  transition: transform 0.5s ease-out;
+}
+
+.content.visible {
+  transform: translateY(0);
 }
 
 canvas {
@@ -32,6 +56,26 @@ canvas {
   color: #000;
   left: 50%;
   transform: translateX(-40%);
+}
+
+.image-container {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.content-image {
+  max-width: 300px;
+  height: auto;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.content-image:hover {
+  transform: scale(1.02);
 }
 
 @media screen and (max-width: 768px) {
